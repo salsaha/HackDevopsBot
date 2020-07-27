@@ -1,0 +1,32 @@
+{
+  "name": "speechbot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./lib/index.js",
+  "scripts": {
+    "build": "tsc --build",
+    "postinstall": "npm run build",
+    "start": "tsc --build && node ./lib/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "nodemon --watch ./src -e ts --exec \"npm run start\""
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/axios": "^0.14.0",
+    "@types/needle": "^2.0.4",
+    "@types/restify": "^8.4.2",
+    "typescript": "^3.9.7"
+  },
+  "dependencies": {
+    "axios": "^0.19.2",
+    "botbuilder": "^4.9.3",
+    "buffer-to-arraybuffer": "0.0.5",
+    "install": "^0.13.0",
+    "microsoft-cognitiveservices-speech-sdk": "^1.13.0",
+    "needle": "^2.5.0",
+    "npm": "^6.14.7",
+    "restify": "^8.5.1",
+    "uuid": "^8.2.0"
+  }
+}
