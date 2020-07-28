@@ -24,6 +24,7 @@
     "@botbuildercommunity/adapter-twilio-whatsapp": "^1.2.0",
     "audiobuffer-to-wav": "^1.0.0",
     "axios": "^0.19.2",
+    "azure-devops-node-api": "^10.1.1",
     "botbuilder": "^4.9.3",
     "buffer-to-arraybuffer": "0.0.5",
     "cloudconvert": "^2.1.3",

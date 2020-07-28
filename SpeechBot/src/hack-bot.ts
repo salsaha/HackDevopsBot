@@ -9,6 +9,7 @@ import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
 import { PushAudioInputStream } from 'microsoft-cognitiveservices-speech-sdk';
 import toWav from 'audiobuffer-to-wav';
 import xhr from 'xhr';
+import { CreateWorkItem } from './workItemInfo';
 //const uuidv4 = require("uuid/v4")
 
 export class HackDevOpsBot extends ActivityHandler {
@@ -38,6 +39,8 @@ export class HackDevOpsBot extends ActivityHandler {
 
     async onMessageHandler(context: TurnContext, next) {
         await this.getAudioStreamFromMessage(context);
+        let TaskName = "Sample task creation";
+        //await CreateWorkItem(TaskName);
         await next();
     }
 
