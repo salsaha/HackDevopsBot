@@ -76,18 +76,28 @@ export class HackDevOpsBot extends ActivityHandler {
 
             var text = await speechService.convertspeechToTextWithRestAPI(uniqueKey);
             if (!text) {
-                text = "Hello world";
+                await self.context.sendActivity(MessageFactory.text('Unable to create task', 'Unable to create task'));
+                return;
             }
-            await context.sendActivity(MessageFactory.text(text, text));
+
+            var name = this.processText(text);
+            var taskUrl = await CreateWorkItem(name);
+            await context.sendActivity(MessageFactory.text(taskUrl, taskUrl));
             // await self.context.sendActivity(MessageFactory.text("Task Submitted. You will receive notification once done!", "Task Submitted"));
         }
-        else {
-            await self.context.sendActivity(MessageFactory.text(this._prevReply, this._prevReply));
-        }
-
-
         // while (!this._speechToTextConversionCompleted);
 
+    }
+
+    processText(text: string) {
+
+        text = text.toLowerCase();
+
+        let name: string;
+
+        name = text.split(' ').slice(2).join(' ');
+        console.log("task name: " + name);
+        return name;
     }
 
     async saveOggFileInServer(contenturl: string, uniqueKey: string): Promise<void> {
