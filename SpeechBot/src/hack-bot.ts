@@ -1,14 +1,17 @@
-// // Copyright (c) Microsoft Corporation. All rights reserved.
-// // Licensed under the MIT License.
-//var bufferToArrayBuffer = require('buffer-to-arraybuffer');
-
+import http from 'http';
+import fs from 'fs';
+import CloudConvert from 'cloudconvert';
+import axios from 'axios';
 import { ActivityHandler, MessageFactory, TurnContext, Attachment, BotHandler } from 'botbuilder';
 import * as needle from 'needle';
 import { SpeechToText } from './speech-service';
 import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
 import { PushAudioInputStream } from 'microsoft-cognitiveservices-speech-sdk';
-export class HackDevOpsBot extends ActivityHandler {
+import toWav from 'audiobuffer-to-wav';
+import xhr from 'xhr';
+//const uuidv4 = require("uuid/v4")
 
+export class HackDevOpsBot extends ActivityHandler {
 
     private context: TurnContext;
     private next: () => Promise<void>;
@@ -18,17 +21,7 @@ export class HackDevOpsBot extends ActivityHandler {
         super();
 
         // See https://aka.ms/about-bot-activity-message to learn more about the message and other activity types.
-        this.onMessage(this.onMessageHandler.bind(this)
-            // async (context, next) => {
-            // if (this.hasAudioAttachement(context)) {
-
-            // }
-            // // const replyText = `Echo: ${context.activity.text}`;
-            // // await context.sendActivity(MessageFactory.text(replyText, replyText));
-            // // By calling next() you ensure that the next BotHandler is run.
-            // await next();
-            //}
-        );
+        this.onMessage(this.onMessageHandler.bind(this));
 
         this.onMembersAdded(async (context, next) => {
             const membersAdded = context.activity.membersAdded;
@@ -44,20 +37,18 @@ export class HackDevOpsBot extends ActivityHandler {
     }
 
     async onMessageHandler(context: TurnContext, next) {
-        //await this.getAudioStreamFromMessage(context)
-        //await this.ConvertAudioToText(context);
-        this.context = context;
-        this.next = next;
         await this.getAudioStreamFromMessage(context);
-
         await next();
     }
 
     hasAudioAttachement(context: TurnContext): boolean {
         if (context.activity.attachments && context.activity.attachments.length > 0 && (context.activity.attachments[0].contentType == 'audio/wav'
-            || context.activity.attachments[0].contentType == 'application/octet-stream')) {
+            || context.activity.attachments[0].contentType == 'application/octet-stream' || context.activity.attachments[0].contentType == 'audio/mpeg' ||
+            context.activity.attachments[0].contentType == 'audio/ogg')) {
+            console.log("audio file received");
             return true;
         }
+        console.log("Content type: " + context.activity.attachments[0].contentType);
         return false
     }
 
@@ -70,26 +61,20 @@ export class HackDevOpsBot extends ActivityHandler {
             const contentUrl = audioAttachement.contentUrl;
             let headers = {};
             headers['Content-Type'] = audioAttachement.contentType;
-            var readableStream = needle.get(contentUrl, { headers: headers });
+            console.log('Audio attachment details: ' + JSON.stringify(audioAttachement));
 
-            // var pushStream = sdk.AudioInputStream.createPushStream();
+            // generate unique-key
+            var uniqueKey = Math.floor(Math.random() * 100) + "";
 
-            // readableStream.on('data', async function (arrayBuffer) {
-
-            //     pushStream.write(arrayBuffer.slice());
-
-            // }).on('end', async () => {
-            //     pushStream.close();
-            //     console.log("Printing");
-
-            //     var speechService = new SpeechToText();
-            //     speechService.convertSpeechToText(pushStream, self.replyToBot.bind(self));
-
-            //     //  callback(pushStream);
-            // });
-            var pushStream = await this.readAudioStream(readableStream)
+            await this.saveOggFileInServer(contentUrl, uniqueKey);
             var speechService = new SpeechToText();
-            var text = await speechService.convertSpeechToText(pushStream, self.replyToBot.bind(self));
+
+
+
+            var text = await speechService.convertspeechToTextWithRestAPI(uniqueKey);
+            if (!text) {
+                text = "Hello world";
+            }
             await context.sendActivity(MessageFactory.text(text, text));
             // await self.context.sendActivity(MessageFactory.text("Task Submitted. You will receive notification once done!", "Task Submitted"));
         }
@@ -102,26 +87,36 @@ export class HackDevOpsBot extends ActivityHandler {
 
     }
 
-    async readAudioStream(readableStream: NodeJS.ReadableStream): Promise<PushAudioInputStream> {
-        return new Promise((resolve, reject) => {
-            var pushStream = sdk.AudioInputStream.createPushStream();
-            readableStream.on('data', async function (arrayBuffer) {
+    async saveOggFileInServer(contenturl: string, uniqueKey: string): Promise<void> {
+        return new Promise(async (resolve, reject) => {
+            console.log("ContentUrl is: " + contenturl);
+            const file = fs.createWriteStream("salini-test_" + uniqueKey + ".ogg");
 
-                pushStream.write(arrayBuffer.slice());
+            const response = await axios.get(contenturl, { responseType: 'stream' });
+            (<any>response.data).pipe(file);
 
-            }).on('end', async () => {
-                pushStream.close();
-                // console.log("Printing");
-                resolve(pushStream);
-                //  callback(pushStream);
+            file.on('finish', function () {
+                file.close();  // close() is async, call cb after close completes.
+                resolve();
             });
-        })
+
+        });
     }
 
-    replyToBot(reply: string) {
-        console.log("Bot reply " + reply);
-        //this._prevReply = reply;
-        // await this.context.sendActivity(MessageFactory.text(reply, reply));
-        //await this.next();
+    async readAudioStream(readableStream: NodeJS.ReadableStream): Promise<PushAudioInputStream> {
+        return new Promise((resolve, reject) => {
+
+            var pushStream = sdk.AudioInputStream.createPushStream();
+            //  var audioContext = new AudioContext();
+            readableStream.on('data', async function (arrayBuffer) {
+                console.log("I am here");
+                console.log("Keys " + Object.keys(arrayBuffer));
+                pushStream.write(arrayBuffer.value);
+                // console.log("Content type: " + Object.keys(arrayBuffer));
+            }).on('end', async () => {
+                pushStream.close();
+                resolve(pushStream);
+            });
+        })
     }
 }
