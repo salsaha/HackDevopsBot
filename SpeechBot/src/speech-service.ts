@@ -12,7 +12,7 @@ export class SpeechToText {
         return new Promise((resolve, reject) => {
             var url = 'https://eastus.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=en-US';
             var header2 = {
-                'Ocp-Apim-Subscription-Key': 'e5de30b9ee4b488592f5b758c7d5a0f3',
+                'Ocp-Apim-Subscription-Key': '',
                 'Content-type': 'audio/ogg; codecs=opus',
                 'Expect': '100-continue',
                 'Accept': 'application/json'
